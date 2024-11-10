@@ -1,9 +1,9 @@
 use actix_web::{web, App, HttpResponse, HttpServer};
+use backend::get_trips;
 use serde_json;
 use serde::Deserialize;
 
 mod backend;
-use crate::backend::get_fake_trips;
 
 async fn health() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({"status": "healthy"}))
@@ -16,7 +16,8 @@ struct TripQuery {
 }
 
 async fn trips(query: web::Query<TripQuery>) -> HttpResponse {
-    match get_fake_trips(query.from_ms, query.n_results).await {
+    println!("{}", query.from_ms);
+    match get_trips(query.from_ms, query.n_results).await {
         Ok(trips) => HttpResponse::Ok().json(serde_json::json!({"trips": trips})),
         Err(e) => {
             HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
@@ -27,7 +28,7 @@ async fn trips(query: web::Query<TripQuery>) -> HttpResponse {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting server...");
-    HttpServer::new(|| {
+    let _ = HttpServer::new(|| {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
             .route("/health", web::get().to(health))
